@@ -133,23 +133,6 @@ void SATSolverCDCL::initialize(string path) {
   fis>>cnf>>literal_count>>clause_count;
   fis.get();
 
-  // char c;   // store first character
-  // string s; // dummy string
-
-  // while (true) {
-  //   cin >> c;
-  //   if (c == 'c') // if comment
-  //   {
-  //     getline(cin, s); // ignore
-  //   } else             // else, if would be a p
-  //   {
-  //     cin >> s; // this would be cnf
-  //     break;
-  //   }
-  // }
-  // cin >> literal_count;
-  // cin >> clause_count;
-
   assigned_literal_count = 0; // no literals assigned so far
   // set the default values
   kappa_antecedent = -1;
@@ -227,6 +210,7 @@ int SATSolverCDCL::CDCL() {
     decision_level++; // increment the current decision level
     // assign the variable at the current decision level with no antecedent
     assign_literal(picked_variable, decision_level, -1);
+    //TODO may need to delete something
     /*
      * unit propagate and backtrack repeatedly till no conflicts are left or
      * we found that the formula is unsatisfiable
@@ -268,8 +252,7 @@ int SATSolverCDCL::unit_propagate(int decision_level) {
   int false_count = 0;            // number of false literals in the clause
   int unset_count = 0;            // number of unset literals in the clause
   int literal_index;
-  bool satisfied_flag =
-      false; // if the clause is satisfied due to the presence of a true literal
+  bool satisfied_flag =false; // if the clause is satisfied due to the presence of a true literal
   int last_unset_literal = -1; // index of an unset literal
   do {
     unit_clause_found = false;
@@ -281,17 +264,13 @@ int SATSolverCDCL::unit_propagate(int decision_level) {
       // iterate over all literals
       for (int j = 0; j < literal_list_per_clause[i].size(); j++) {
         // get the vector index of the literal
-        literal_index =
-            literal_to_variable_index(literal_list_per_clause[i][j]);
+        literal_index =literal_to_variable_index(literal_list_per_clause[i][j]);
         if (literals[literal_index] == -1) // if unassigned
         {
           unset_count++;
           last_unset_literal = j; // store the index, may be needed later
-        } else if ((literals[literal_index] == 0 &&
-                    literal_list_per_clause[i][j] > 0) ||
-                   (literals[literal_index] == 1 &&
-                    literal_list_per_clause[i][j] <
-                        0)) // if false in the clause
+        } else if ((literals[literal_index] == 0 &&literal_list_per_clause[i][j] > 0) ||
+                   (literals[literal_index] == 1 &&literal_list_per_clause[i][j] <0)) // if false in the clause
         {
           false_count++;
         } else // if true in the clause, so the clause is satisfied
@@ -308,10 +287,8 @@ int SATSolverCDCL::unit_propagate(int decision_level) {
       if (unset_count == 1) {
         // assign the unset literal at this decision level and this clause i as
         // the antecedent
-        assign_literal(literal_list_per_clause[i][last_unset_literal],
-                       decision_level, i);
-        unit_clause_found =
-            true; // we have found a unit clause, so restart iteratin
+        assign_literal(literal_list_per_clause[i][last_unset_literal],decision_level, i);
+        unit_clause_found =true; // we have found a unit clause, so restart iteratin
         break;
       }
       // if the clause is unsatisfied
@@ -333,15 +310,13 @@ int SATSolverCDCL::unit_propagate(int decision_level) {
  * sign tells the direction of assignment decision_level - the decision level to
  * assign at antecedent - the antecedent of the assignment
  */
-void SATSolverCDCL::assign_literal(int variable, int decision_level,
-                                   int antecedent) {
+void SATSolverCDCL::assign_literal(int variable, int decision_level,int antecedent) {
   int literal = literal_to_variable_index(variable); // get the index
   int value = (variable > 0) ? 1 : 0; // choose the assignment based on sign
   literals[literal] = value;          // assign
   literal_decision_level[literal] = decision_level; // set decision level
   literal_antecedent[literal] = antecedent;         // set antecedent
-  literal_frequency[literal] =
-      -1; // unset frequency so this is not chosen for assignment again
+  literal_frequency[literal] =-1; // unset frequency so this is not chosen for assignment again
   assigned_literal_count++; // increment the count of number of variables
                             // assigned
 }
@@ -378,8 +353,7 @@ int SATSolverCDCL::conflict_analysis_and_backtrack(int decision_level) {
   // the new clause to learn, initialized with the antecedent of the conflict
   vector<int> learnt_clause = literal_list_per_clause[kappa_antecedent];
   int conflict_decision_level = decision_level;
-  int this_level_count =
-      0;                // number of literals from the same decision level found
+  int this_level_count =0;// number of literals from the same decision level found
   int resolver_literal; // literal whose antecedent will next be used to resolve
   int literal;          // to store the index
   do {
@@ -406,8 +380,7 @@ int SATSolverCDCL::conflict_analysis_and_backtrack(int decision_level) {
     // otherwise resolve with the antecedent of the candidate resolver literal
     learnt_clause = resolve(learnt_clause, resolver_literal);
   } while (true);
-  literal_list_per_clause.push_back(
-      learnt_clause); // add the learnt clause to the list
+  literal_list_per_clause.push_back(learnt_clause); // add the learnt clause to the list
   // update the polarities and frequencies from the learnt clause
   for (int i = 0; i < learnt_clause.size(); i++) {
     int literal_index = literal_to_variable_index(learnt_clause[i]);
