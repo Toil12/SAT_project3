@@ -380,20 +380,34 @@ int SATSolverCDCL::conflict_analysis_and_backtrack(int decision_level) {
     // otherwise resolve with the antecedent of the candidate resolver literal
     learnt_clause = resolve(learnt_clause, resolver_literal);
   } while (true);
-  literal_list_per_clause.push_back(learnt_clause); // add the learnt clause to the list
-  // update the polarities and frequencies from the learnt clause
-  for (int i = 0; i < learnt_clause.size(); i++) {
-    int literal_index = literal_to_variable_index(learnt_clause[i]);
-    int update = (learnt_clause[i] > 0) ? 1 : -1;
-    literal_polarity[literal_index] += update;
-    // update frequency only if it is not currently assigned, else only update
-    // the backup
-    if (literal_frequency[literal_index] != -1) {
-      literal_frequency[literal_index]++;
+  
+  //Deletion strategy: m-size relevance based learning, here set m = 3 
+  int unsigned_count=0;
+  for(int i=0; i<learnt_clause.size(); i++){ 
+    if(learnt_clause[i]==-1){
+      unsigned_count++;
     }
-    original_literal_frequency[literal_index]++;
   }
-  clause_count++;                     // increment the clause count
+  if(unsigned_count <=3 ){
+
+    literal_list_per_clause.push_back(
+    learnt_clause); // add the learnt clause to the list
+    // update the polarities and frequencies from the learnt clause
+    for (int i = 0; i < learnt_clause.size(); i++) {
+
+      int literal_index = literal_to_variable_index(learnt_clause[i]);
+      int update = (learnt_clause[i] > 0) ? 1 : -1;
+      literal_polarity[literal_index] += update;
+      // update frequency only if it is not currently assigned, else only update
+      // the backup
+      if (literal_frequency[literal_index] != -1) {
+        literal_frequency[literal_index]++;
+      }
+      original_literal_frequency[literal_index]++;
+    }
+    clause_count++;                     // increment the clause count
+  }
+
   int backtracked_decision_level = 0; // decision level to backtrack to
   for (int i = 0; i < learnt_clause.size(); i++) {
     int literal_index = literal_to_variable_index(learnt_clause[i]);
